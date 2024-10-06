@@ -7,7 +7,7 @@
  <body>
   <referenceBlock name="page.main.title">
    <action method="setPageTitle">
-    <argument translate="true" name="title" xsi:type="string">Car Profile</argument>
+    <argument translate="true" name="title" xsi:type="string">My Car Profile</argument>
    </action>
   </referenceBlock>
   <referenceContainer name="content">
