@@ -1,111 +1,170 @@
 <?php if ($block->getCarData()): ?>
-<figure class="car-figure">
- <img src="" alt="" />
- <figcaption><?= $block->getCarData()['car_make'] ?> | <?= $block->getCarData()['car_model'] ?></figcaption>
-</figure>
+    <figure class="car-figure">
+        <img src="" alt="" />
+        <figcaption><?= $block->getCarData()['car_make'] ?> | <?= $block->getCarData()['car_model'] ?></figcaption>
+    </figure>
 <?php else: ?>
-<p><?= __('No car profile data found.'); ?></p>
+    <p><?= __('No car profile data found.'); ?></p>
 <?php endif; ?>
 
-<form action="<?= $block->getUrl('carprofile/index/post'); ?>" method="post" data-mage-init='{"validation": {}}'>
+<form id="car-profile-form" action="<?= $block->getUrl('carprofile/index/post'); ?>" method="post" data-mage-init='{"validation": {}}'>
+    <input type="hidden" name="form_key" value="<?= $block->getFormKey() ?>" />
 
- <input type="hidden" name="form_key" value="<?= $block->getFormKey() ?>" />
+    <fieldset class="fieldset car">
+        <div class="field car_make required">
+            <label class="label" for="car_make">
+                <span><?= __('Car Make') ?></span>
+            </label>
+            <div class="control">
+                <select name="car_make" data-validate='{"required":true}'>
+                    <option value=""><?= __('Select Item') ?></option>
+                </select>
+            </div>
+        </div>
 
- <fieldset class="fieldset car">
- 
-  <div class="field car_make required">
-   <label class="label" for="car_make">
-    <span><?= __('Car Make') ?></span>
-   </label>
-   <div class="control">
-    <select name="car_make" data-validate='{"required":true}'>
-     <option value=""><?= __('Select Item') ?></option>
-    </select>
-   </div>
-  </div>
+        <div class="field car_model required">
+            <label class="label" for="car_model">
+                <span><?= __('Car Model') ?></span>
+            </label>
+            <div class="control">
+                <select name="car_model" data-validate='{"required":true}'>
+                    <option value=""><?= __('Select Item') ?></option>
+                </select>
+            </div>
+        </div>
 
-  <div class="field car_model required">
-   <label class="label" for="car_model">
-    <span><?= __('Car Model') ?></span>
-   </label>
-   <div class="control">
-    <select name="car_model" data-validate='{"required":true}'>
-     <option value=""><?= __('Select Item') ?></option>
-    </select>
-   </div>
-  </div>
-
-  <div class="actions-toolbar">
-   <div class="primary">
-    <button type="submit" class="action save primary" title="Save Car">
-     <span><?= __('Save Cars') ?></span>
-    </button>
-   </div>
-  </div>
-
- </fieldset>
-
+        <div class="actions-toolbar">
+            <div class="primary">
+                <button type="submit" class="action save primary" title="Save Car">
+                    <span><?= __('Save Cars') ?></span>
+                </button>
+            </div>
+        </div>
+    </fieldset>
 </form>
 
 <script>
+    require([
+        'jquery',
+        'Magento_Ui/js/modal/alert',
+        'mage/validation'
+    ], function ($, alert) {
+        'use strict';
 
- require([
-  'jquery'
- ], function ($) {
-    
-  'use strict';
+        var $endpoint = 'https://exam.razoyo.com/api/cars';
 
-  var $endpoint = 'https://exam.razoyo.com/api/cars';
+        // Load Car Makes and attach model loading
+        var getCarMake = function(url) {
+            $.ajax({
+                url: url,
+                method: 'GET',
+                beforeSend: function() {
+                    $('body').trigger('processStart'); // Show Magento loader
+                },
+                success: function(res, textStatus, jqXHR) {
+                    let $data = res.makes;
+                    let $items = $data.map(function(item) {
+                        return `<option value="${item}">${item}</option>`;
+                    }).join('');
+                    $('select[name="car_make"]').append($items)
+                        .on('change', function() {
+                            getCarModel(`${$endpoint}?make=${$(this).val()}`);
+                        });
+                    $('body').trigger('processStop'); // Hide Magento loader
+                },
+                error: function(xhr, status, error) {
+                    $('body').trigger('processStop'); // Hide loader on error
+                    console.error('Error:', error);
+                }
+            });
+        };
 
-  var getCarMake = function(url) {
-   $.ajax({
-    url: url,
-    method: 'GET',
-    beforeSend: function( xhr ) {
-      $('body').trigger('processStart');
-    },
-    success: function(res) {
-     let $data = res.makes;
-     let $items = $data.map(function(item, key) {
-      return `
-       <option value="${item}">${item}</option>
-      `
-     }).join('');
-     $('select[name="car_make"]')
-      .append($items)
-      .on('change',function(){
-       getCarModel(`${$endpoint}?make=${$(this).val()}`);
-     });
-     $('body').trigger('processStop');
-    },
-    error: function(xhr, status, error) {
-     console.error('Error:', error);
-    }
-   });
-  }
+        // Load Car Models based on Car Make
+        var getCarModel = function(url) {
+            $.ajax({
+                url: url,
+                method: 'GET',
+                success: function(res, textStatus, jqXHR) {
+                    
+                    let $data = res.cars;
+                    let $items = $data.map(function(item) {
+                        return `<option value="${item.model}" data-id="${item.id}" data-year="${item.year}">${item.model}</option>`;
+                    }).join('');
 
-  var getCarModel = function(url) {
-   $.ajax({
-    url: url,
-    method: 'GET',
-    success: function(res) {
-     let $data = res.cars;
-     let $items = $data.map(function(item, key) {
-      return `
-       <option value="${item.model}" data-id="${item.id}" data-year="${item.year}">${item.model}</option>
-      `
-     }).join('');
-     $('select[name="car_model"]').children('option:not(:first)').remove();
-     $('select[name="car_model"]').append($items);
-    },
-    error: function(xhr, status, error) {
-     console.error('Error:', error);
-    }
-   });
-  }
+                    $('select[name="car_model"]').children('option:not(:first)').remove();
+                    $('select[name="car_model"]').append($items);
+                    $('select[name="car_model"]').off().on('change',function(){
+                     
+                      let $id = $(this).find(':selected').data('id');
 
-  getCarMake($endpoint);
+                     $.ajax({
+                url: 'https://exam.razoyo.com/api/cars/' + $id,
+                method: 'GET',
+                headers: {"Authorization": "Bearer " + jqXHR.getResponseHeader('Your-Token')},
+                success: function(res, textStatus, jqXHR) {
+                    console.log(res);
+                },
+                error: function(xhr, status, error) {
+                    console.error('Error:', error);
+                }
+            });
 
-});
+                    });
+                    
+                },
+                error: function(xhr, status, error) {
+                    console.error('Error:', error);
+                }
+            });
+        };
 
+        getCarMake($endpoint); // Initialize car make loading
+
+        // Handle form submission with AJAX
+        $('#car-profile-form').on('submit', function(event) {
+            event.preventDefault(); // Prevent default form submission
+            var form = $(this);
+
+            if (!form.validation('isValid')) {
+                return; // Prevent AJAX submission if validation fails
+            }
+
+            var formKey = $('input[name="form_key"]').val(); // Fetch form key
+
+            $.ajax({
+                url: form.attr('action'),
+                method: 'POST',
+                dataType: 'json',
+                data: form.serialize() + '&form_key=' + formKey, // Add form key to data
+                beforeSend: function() {
+                    $('body').trigger('processStart'); // Show Magento loader
+                },
+                success: function(response) {
+                    $('body').trigger('processStop'); // Hide loader
+                    if (response.success) {
+                        // Show success message
+                        alert({
+                            content: response.message
+                        });
+
+                        // Optionally update car details dynamically
+                        $('.car-figure figcaption').text(response.car_make + ' | ' + response.car_model);
+                    } else {
+                        // Handle server errors
+                        alert({
+                            content: response.message || 'An error occurred while saving the car profile.'
+                        });
+                    }
+                },
+                error: function(xhr, status, error) {
+                    $('body').trigger('processStop'); // Hide loader on error
+                    alert({
+                        content: 'Error: ' + error
+                    });
+                }
+            });
+        });
+
+
+    });
 </script>
