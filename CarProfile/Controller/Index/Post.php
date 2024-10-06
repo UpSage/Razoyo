@@ -5,23 +5,19 @@ namespace Razoyo\CarProfile\Controller\Index;
 use Magento\Framework\App\Action\Action;
 use Magento\Framework\App\Action\Context;
 use Magento\Framework\Controller\ResultFactory;
-use Magento\Framework\Session\SessionManagerInterface;
 use Magento\Customer\Model\Session as CustomerSession;
 use Razoyo\CarProfile\Model\CarProfileFactory;
 
 class Post extends Action
 {
-    protected $coreSession;
     protected $customerSession;
     protected $carProfileFactory;
 
     public function __construct(
         Context $context,
-        SessionManagerInterface $coreSession,
         CustomerSession $customerSession,
         CarProfileFactory $carProfileFactory
     ) {
-        $this->coreSession = $coreSession;
         $this->customerSession = $customerSession;
         $this->carProfileFactory = $carProfileFactory;
         parent::__construct($context);
