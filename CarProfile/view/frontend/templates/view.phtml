@@ -1,0 +1,117 @@
+<style>
+ .car-figure { width: 100%; height: 400px; margin-bottom: 2rem; background-color: #ccc; }
+ .fieldset.car,
+ .fieldset.car > .field { display:flex; align-items: center; justify-content: center; }
+ .fieldset.car { margin-bottom: 1rem; }
+ .fieldset.car > .field { margin-right: 2rem; margin-bottom: 0; }
+ .fieldset.car > .field .label { margin-right: 1rem; margin-bottom: 0; } 
+ .fieldset.car > .actions-toolbar button { margin: 0; }
+</style>
+
+<figure class="car-figure"></figure>
+
+<?php if ($block->getCarData()): ?>
+ <p><strong><?= __('Car Make:'); ?></strong> <?= $block->escapeHtml($block->getCarData()['car_make']); ?></p>
+ <p><strong><?= __('Car Model:'); ?></strong> <?= $block->escapeHtml($block->getCarData()['car_model']); ?></p>
+<?php else: ?>
+ <p><?= __('No car profile data found.'); ?></p>
+<?php endif; ?>
+
+<form action="<?= $block->getUrl('carprofile/index/post'); ?>" method="post" data-mage-init='{"validation": {}}'>
+
+ <input type="hidden" name="form_key" value="<?= $block->getFormKey() ?>" />
+
+ <fieldset class="fieldset car">
+ 
+  <div class="field car_make required">
+   <label class="label" for="car_make">
+    <span><?= __('Car Make') ?></span>
+   </label>
+   <div class="control">
+    <select name="car_make" data-validate='{"required":true}'>
+     <option value=""><?= __('Select Item') ?></option>
+    </select>
+   </div>
+  </div>
+
+  <div class="field car_model required">
+   <label class="label" for="car_model">
+    <span><?= __('Car Model') ?></span>
+   </label>
+   <div class="control">
+    <select name="car_model" data-validate='{"required":true}'>
+     <option value=""><?= __('Select Item') ?></option>
+    </select>
+   </div>
+  </div>
+
+  <div class="actions-toolbar">
+   <div class="primary">
+    <button type="submit" class="action save primary" title="Save Car">
+     <span><?= __('Save Cars') ?></span>
+    </button>
+   </div>
+  </div>
+
+ </fieldset>
+
+</form>
+
+<script>
+
+ require([
+  'jquery'
+ ], function ($) {
+    
+  'use strict';
+
+  var $endpoint = 'https://exam.razoyo.com/api/cars';
+
+  var getCarMake = function(url) {
+   $.ajax({
+    url: url,
+    method: 'GET',
+    success: function(res) {
+     let $data = res.makes;
+     let $items = $data.map(function(item, key) {
+      return `
+       <option value="${item}">${item}</option>
+      `
+     }).join('');
+     $('select[name="car_make"]')
+      .append($items)
+      .on('change',function(){
+       getCarModel(`${$endpoint}?make=${$(this).val()}`);
+     }); 
+    },
+    error: function(xhr, status, error) {
+     console.error('Error:', error);
+    }
+   });
+  }
+
+  var getCarModel = function(url) {
+   $.ajax({
+    url: url,
+    method: 'GET',
+    success: function(res) {
+     let $data = res.cars;
+     let $items = $data.map(function(item, key) {
+      return `
+       <option value="${item.model}" data-id="${item.id}">${item.model}</option>
+      `
+     }).join('');
+     $('select[name="car_model"]').children('option:not(:first)').remove();
+     $('select[name="car_model"]').append($items);
+    },
+    error: function(xhr, status, error) {
+     console.error('Error:', error);
+    }
+   });
+  }
+
+  getCarMake($endpoint);
+
+});
+
+</script>
