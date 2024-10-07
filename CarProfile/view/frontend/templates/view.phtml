@@ -26,7 +26,7 @@
 <?php else: ?>
   <div class="car-data">
    <figure class="car-figure">
-    <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8Vw8AAoEBfymqrywAAAAASUVORK5CYII=">
+    <img class="car-image" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8Vw8AAoEBfymqrywAAAAASUVORK5CYII=">
     <figcaption class="car-caption">
      <span class="car-name"><?= __('No car profile data found.'); ?></span>
      <span class="car-price"></span>
@@ -158,62 +158,64 @@
         };
 
         var submitForm = function() {
-         $('#car-profile-form').on('submit', function(event) {
-            event.preventDefault();
-            var form = $(this);
+    $('#car-profile-form').on('submit', function(event) {
+        event.preventDefault();
+        var form = $(this);
 
-            if (!form.validation('isValid')) {
-                return;
-            }
+        if (!form.validation('isValid')) {
+            return;
+        }
 
-            var formKey = $('input[name="form_key"]').val();
+        var formKey = $('input[name="form_key"]').val();
 
-            $.ajax({
-                url: form.attr('action'),
-                method: 'POST',
-                dataType: 'json',
-                data: form.serialize() + '&form_key=' + formKey,
-                beforeSend: function() {
-                    $('body').trigger('processStart');
-                },
-                success: function(response) {
-                    $('body').trigger('processStop');
-                    if (response.success) {
-                        console.log(response);
-                        let $carMake = response.car_make;
-                        let $carModel = response.car_model;
-                        let $carYear = response.car_year;
-                        let $carPrice = response.car_price;
-                        let $carSeats = response.car_seats;
-                        let $carMpg = response.car_mpg;
-                        let $carImage = response.car_image;
-                        alert({
-                            content: response.message
-                        });
-                        $('.car-figure .car-image').attr('src', $carImage);
-                        $('.car-figure .car-name').text(
-                         `${$carMake} ${$carModel} ${$carYear}`
-                        );
-                        $('.car-figure .car-price').text(`${$carPrice}`);
-                        $('.car-description').html(`
-                         <p>${$carMake} ${$carModel} ${$carYear} is a ${$carSeats} seater car rated at ${$carMpg} MPG.</p>
-                        `);
-                        
-                    } else {
-                        alert({
-                            content: response.message || 'An error occurred while saving the car profile.'
-                        });
-                    }
-                },
-                error: function(xhr, status, error) {
-                    $('body').trigger('processStop');
+        $.ajax({
+            url: form.attr('action'),
+            method: 'POST',
+            dataType: 'json',
+            data: form.serialize() + '&form_key=' + formKey,
+            beforeSend: function() {
+                $('body').trigger('processStart');
+            },
+            success: function(response) {
+                $('body').trigger('processStop');
+                if (response.success) {
+                    console.log(response);
+                    let $carMake = response.car_make;
+                    let $carModel = response.car_model;
+                    let $carYear = response.car_year;
+                    let $carPrice = response.car_price;
+                    let $carSeats = response.car_seats;
+                    let $carMpg = response.car_mpg;
+                    let $carImage = response.car_image;
                     alert({
-                        content: 'Error: ' + error
+                        content: response.message
+                    });
+                    $('.car-figure .car-image').attr('src', $carImage);
+                    $('.car-figure .car-name').text(
+                        `${$carMake} ${$carModel} ${$carYear}`
+                    );
+                    // Display price with the currency symbol
+                    $('.car-figure .car-price').text(`${$carPrice}`);
+                    $('.car-description').html(`
+                        <p>${$carMake} ${$carModel} ${$carYear} is a ${$carSeats} seater car rated at ${$carMpg} MPG.</p>
+                    `);
+                    
+                } else {
+                    alert({
+                        content: response.message || 'An error occurred while saving the car profile.'
                     });
                 }
-            });
-         });
-        }
+            },
+            error: function(xhr, status, error) {
+                $('body').trigger('processStop');
+                alert({
+                    content: 'Error: ' + error
+                });
+            }
+        });
+    });
+}
+
 
         getCarMake($endpoint);
         submitForm();

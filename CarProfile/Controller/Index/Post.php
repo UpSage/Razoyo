@@ -7,22 +7,26 @@ use Magento\Framework\App\Action\Context;
 use Magento\Framework\Controller\Result\JsonFactory;
 use Magento\Customer\Model\Session as CustomerSession;
 use Razoyo\CarProfile\Model\CarProfileFactory;
+use Magento\Store\Model\StoreManagerInterface;
 
 class Post extends Action
 {
     protected $jsonFactory;
     protected $customerSession;
     protected $carProfileFactory;
+    protected $storeManager;
 
     public function __construct(
         Context $context,
         JsonFactory $jsonFactory,
         CustomerSession $customerSession,
-        CarProfileFactory $carProfileFactory
+        CarProfileFactory $carProfileFactory,
+        StoreManagerInterface $storeManager // Inject StoreManager
     ) {
         $this->jsonFactory = $jsonFactory;
         $this->customerSession = $customerSession;
         $this->carProfileFactory = $carProfileFactory;
+        $this->storeManager = $storeManager; // Assign StoreManager
         parent::__construct($context);
     }
 
@@ -92,6 +96,12 @@ class Post extends Action
                 // Save car profile
                 $carProfile->save();
 
+                // Get the currency symbol
+                $currencySymbol = $this->storeManager->getStore()->getCurrentCurrency()->getCurrencySymbol();
+
+                // Format the price with commas and the currency symbol
+                $formattedPrice = $currencySymbol . number_format($postData['car_price'], 2); // Format with 2 decimal places
+
                 return $resultJson->setData([
                     'success' => true,
                     'message' => __('Your car profile has been submitted.'),
@@ -99,7 +109,7 @@ class Post extends Action
                     'car_model' => $postData['car_model'],
                     'car_id' => $postData['car_id'],
                     'car_mpg' => $postData['car_mpg'],
-                    'car_price' => $postData['car_price'],
+                    'car_price' => $formattedPrice, // Return formatted price with currency
                     'car_seats' => $postData['car_seats'],
                     'car_year' => $postData['car_year'],
                     'car_image' => $postData['car_image']
