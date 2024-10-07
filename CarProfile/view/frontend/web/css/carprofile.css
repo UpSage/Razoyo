@@ -1,6 +1,9 @@
-.car-figure { margin-bottom: 3rem; box-shadow: 0px 3px 6px 0px rgba(0, 0, 0, 0.25); }
-.car-figure img { width: 100%; height: 400px; background-color: #ccc; }
-.car-figure figcaption { padding: 0.75rem 1rem; background-color: #fff; font-size: 2rem; font-weight: 200; }
+.car-data { max-width: 550px; margin: 0 auto 3rem; box-shadow: 0px 3px 6px 0px rgba(0, 0, 0, 0.25); }
+.car-figure .car-image { width: 100%; height: 400px; background-color: #ccc; object-fit:cover; }
+.car-figure .car-caption { padding: 0.75rem 1rem; background-color: #fff; font-size: 2rem;  display: flex; align-items: center; }
+.car-figure .car-name { font-weight: 500; }
+.car-figure .car-price { margin-left: auto; font-weight: 300; }
+.car-description { padding: 0.5rem 1rem; font-size: 1.6rem; font-weight: 200; }
 .fieldset.car,
 .fieldset.car > .field { display:flex; align-items: center; justify-content: center; }
 .fieldset.car { margin-bottom: 1rem; }

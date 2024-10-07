@@ -32,6 +32,7 @@ class Post extends Action
         $postData = $this->getRequest()->getPostValue();
 
         if ($postData) {
+            // Ensure car make and car model are provided
             if (empty($postData['car_make']) || empty($postData['car_model'])) {
                 return $resultJson->setData([
                     'success' => false,
@@ -40,6 +41,7 @@ class Post extends Action
             }
 
             try {
+                // Get logged-in customer ID
                 $customerId = $this->customerSession->getCustomerId();
 
                 if (!$customerId) {
@@ -49,29 +51,58 @@ class Post extends Action
                     ]);
                 }
 
+                // Verify that the form's customer_id matches the logged-in customer
+                if (isset($postData['customer_id']) && $postData['customer_id'] != $customerId) {
+                    return $resultJson->setData([
+                        'success' => false,
+                        'message' => __('You are not allowed to submit this form.')
+                    ]);
+                }
+
                 $carProfile = $this->carProfileFactory->create();
                 $carProfile->load($customerId, 'customer_id');
 
                 if (!$carProfile->getId()) {
+                    // Create a new car profile if none exists
                     $carProfile->setData([
                         'customer_id' => $customerId,
                         'car_make' => $postData['car_make'],
                         'car_model' => $postData['car_model'],
+                        'car_id' => $postData['car_id'],
+                        'car_mpg' => $postData['car_mpg'],
+                        'car_price' => $postData['car_price'],
+                        'car_seats' => $postData['car_seats'],
+                        'car_year' => $postData['car_year'],
+                        'car_image' => $postData['car_image'],
                         'created_at' => date('Y-m-d H:i:s')
                     ]);
                 } else {
+                    // Update existing car profile
                     $carProfile->setCarMake($postData['car_make']);
                     $carProfile->setCarModel($postData['car_model']);
+                    $carProfile->setCarId($postData['car_id']);
+                    $carProfile->setCarMpg($postData['car_mpg']);
+                    $carProfile->setCarPrice($postData['car_price']);
+                    $carProfile->setCarSeats($postData['car_seats']);
+                    $carProfile->setCarYear($postData['car_year']);
+                    $carProfile->setCarImage($postData['car_image']);
                     $carProfile->setCreatedAt(date('Y-m-d H:i:s'));
                 }
 
+                // Save car profile
                 $carProfile->save();
 
                 return $resultJson->setData([
                     'success' => true,
                     'message' => __('Your car profile has been submitted.'),
                     'car_make' => $postData['car_make'],
-                    'car_model' => $postData['car_model']
+                    'car_model' => $postData['car_model'],
+                    'car_id' => $postData['car_id'],
+                    'car_mpg' => $postData['car_mpg'],
+                    'car_price' => $postData['car_price'],
+                    'car_seats' => $postData['car_seats'],
+                    'car_year' => $postData['car_year'],
+                    'car_image' => $postData['car_image']
                 ]);
 
             } catch (\Exception $e) {

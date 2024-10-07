@@ -1,15 +1,50 @@
-<?php if ($block->getCarData()): ?>
-<figure class="car-figure">
-    <img src="" alt="" />
-    <figcaption><?= $block->getCarData()['car_make'] ?> | <?= $block->getCarData()['car_model'] ?></figcaption>
-</figure>
+<?php
+
+ if ($block->getCarData()):
+
+  $id = $block->getCarData()['car_id'];
+  $make = $block->getCarData()['car_make'];
+  $model = $block->getCarData()['car_model'];
+  $year = $block->getCarData()['car_year'];
+  $mpg = $block->getCarData()['car_mpg'];
+  $price = $block->formatPrice($block->getCarData()['car_price']);
+  $seats = $block->getCarData()['car_seats'];
+  $image = $block->getCarData()['car_image'];
+?>
+<div id="car-<?= $id ?>" class="car-data">
+ <figure class="car-figure">
+    <img class="car-image" src="<?= $image ?>" alt="<?= $make . " | " . $model ?>" />
+    <figcaption class="car-caption">
+     <span class="car-name"><?= $make .' '. $model .' '. $year ?></span>
+     <span class="car-price"><?= $price ?></span>
+    </figcaption>
+ </figure>
+ <div class="car-description">
+  <p><?= $make .' '. $model .' '. $year . ' is a ' . $seats . ' seater car rated at ' . $mpg . ' MPG.' ?> <p>
+ </div>
+</div>
 <?php else: ?>
-<p><?= __('No car profile data found.'); ?></p>
+  <div class="car-data">
+   <figure class="car-figure">
+    <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8Vw8AAoEBfymqrywAAAAASUVORK5CYII=">
+    <figcaption class="car-caption">
+     <span class="car-name"><?= __('No car profile data found.'); ?></span>
+     <span class="car-price"></span>
+    </figcaption>
+   </figure>
+   <div class="car-description"></div>
+  </div>
 <?php endif; ?>
 
 <form id="car-profile-form" action="<?= $block->getUrl('carprofile/index/post'); ?>" method="post" data-mage-init='{"validation": {}}'>
     <input type="hidden" name="form_key" value="<?= $block->getFormKey() ?>" />
     <fieldset class="fieldset car">
+        <input type="hidden" name="car_id" value="" />
+        <input type="hidden" name="car_year" value="" />
+        <input type="hidden" name="car_mpg" value="" />
+        <input type="hidden" name="car_price" value="" />
+        <input type="hidden" name="car_seats" value="" />
+        <input type="hidden" name="car_image" value="" />
         <div class="field car_make required">
             <label class="label" for="car_make">
                 <span><?= __('Car Make') ?></span>
@@ -57,12 +92,13 @@
                 beforeSend: function() {
                     $('body').trigger('processStart');
                 },
-                success: function(res, textStatus, jqXHR) {
-                    let $data = res.makes;
+                success: function(response, textStatus, jqXHR) {
+                    let $data = response.makes;
+                    let $field = $('select[name="car_make"]');
                     let $items = $data.map(function(item) {
                         return `<option value="${item}">${item}</option>`;
                     }).join('');
-                    $('select[name="car_make"]').append($items)
+                    $field.append($items)
                         .on('change', function() {
                             getCarModel(`${$endpoint}?make=${$(this).val()}`);
                         });
@@ -79,15 +115,20 @@
             $.ajax({
                 url: url,
                 method: 'GET',
-                success: function(res, textStatus, jqXHR) {
-                    let $data = res.cars;
+                success: function(response, textStatus, jqXHR) {
+                    let $data = response.cars;
+                    let $field = $('select[name="car_model"]');
                     let $items = $data.map(function(item) {
-                        return `<option value="${item.model}" data-id="${item.id}" data-year="${item.year}">${item.model}</option>`;
+                        return `<option value="${item.model}" data-id="${item.id}">${item.model}</option>`;
                     }).join('');
-                    $('select[name="car_model"]').children('option:not(:first)').remove();
-                    $('select[name="car_model"]').append($items);
-                    $('select[name="car_model"]').off().on('change', function() {
-                        getCarData($endpoint, $(this).find(':selected').data('id'), jqXHR.getResponseHeader('Your-Token'));
+                    $field.children('option:not(:first)').remove();
+                    $field.append($items);
+                    $field.off().on('change', function() {
+                        getCarData(
+                         $endpoint,
+                         $(this).find(':selected').data('id'),
+                         jqXHR.getResponseHeader('Your-Token')
+                        );
                     });
                 },
                 error: function(xhr, status, error) {
@@ -101,8 +142,14 @@
                 url: `${url + '/' + id}`,
                 method: 'GET',
                 headers: {"Authorization": "Bearer " + token},
-                success: function(res, textStatus, jqXHR) {
-                    console.log(res);
+                success: function(response, textStatus, jqXHR) {
+                    let $car = response.car;
+                    $('input[name="car_id"]').val($car.id);
+                    $('input[name="car_year"]').val($car.year);
+                    $('input[name="car_mpg"]').val($car.mpg);
+                    $('input[name="car_price"]').val($car.price);
+                    $('input[name="car_seats"]').val($car.seats);
+                    $('input[name="car_image"]').val($car.image);
                 },
                 error: function(xhr, status, error) {
                     console.error('Error:', error);
@@ -132,10 +179,26 @@
                 success: function(response) {
                     $('body').trigger('processStop');
                     if (response.success) {
+                        console.log(response);
+                        let $carMake = response.car_make;
+                        let $carModel = response.car_model;
+                        let $carYear = response.car_year;
+                        let $carPrice = response.car_price;
+                        let $carSeats = response.car_seats;
+                        let $carMpg = response.car_mpg;
+                        let $carImage = response.car_image;
                         alert({
                             content: response.message
                         });
-                        $('.car-figure figcaption').text(response.car_make + ' | ' + response.car_model);
+                        $('.car-figure .car-image').attr('src', $carImage);
+                        $('.car-figure .car-name').text(
+                         `${$carMake} ${$carModel} ${$carYear}`
+                        );
+                        $('.car-figure .car-price').text(`${$carPrice}`);
+                        $('.car-description').html(`
+                         <p>${$carMake} ${$carModel} ${$carYear} is a ${$carSeats} seater car rated at ${$carMpg} MPG.</p>
+                        `);
+                        
                     } else {
                         alert({
                             content: response.message || 'An error occurred while saving the car profile.'
